@@ -228,4 +228,164 @@ document.addEventListener('DOMContentLoaded', () => {
         // Delay initialization slightly to let fonts/layouts fully settle
         setTimeout(handleServicesScroll, 100);
     }
+
+    /* -------------------------------------------------------------
+       4. Interactive Video Showcase Play/Pause Controller
+       ------------------------------------------------------------- */
+    const showcaseVideo = document.getElementById('showcaseVideo');
+    const videoPlayOverlay = document.getElementById('videoPlayOverlay');
+
+    if (showcaseVideo && videoPlayOverlay) {
+        // Toggle play/pause on click
+        function toggleVideoPlay() {
+            if (showcaseVideo.paused) {
+                showcaseVideo.play().then(() => {
+                    videoPlayOverlay.classList.add('playing');
+                }).catch(err => {
+                    console.log("Play failed: ", err);
+                });
+            } else {
+                showcaseVideo.pause();
+                videoPlayOverlay.classList.remove('playing');
+            }
+        }
+
+        videoPlayOverlay.addEventListener('click', toggleVideoPlay);
+        showcaseVideo.addEventListener('click', toggleVideoPlay);
+
+        // Autoplay when scrolled into view
+        const observerOptions = {
+            root: null,
+            threshold: 0.2
+        };
+
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    showcaseVideo.play().then(() => {
+                        videoPlayOverlay.classList.add('playing');
+                    }).catch(err => {
+                        console.log("Autoplay was blocked or interrupted: ", err);
+                    });
+                } else {
+                    showcaseVideo.pause();
+                    videoPlayOverlay.classList.remove('playing');
+                }
+            });
+        }, observerOptions);
+
+        videoObserver.observe(showcaseVideo);
+    }
+
+    /* -------------------------------------------------------------
+       5. Draggable & Auto-Scrolling Events Gallery Slider
+       ------------------------------------------------------------- */
+    const galleryWrapper = document.getElementById('galleryTrackWrapper');
+    const galleryTrack = document.getElementById('galleryTrack');
+
+    if (galleryWrapper && galleryTrack) {
+        let isUserInteracting = false;
+        let isHovered = false;
+        let interactionTimeout = null;
+        const scrollSpeed = 0.7; // Pixels per frame (smooth slow crawl)
+        
+        // Auto scroll animation loop
+        function autoScrollGallery() {
+            if (!isUserInteracting && !isHovered) {
+                galleryWrapper.scrollLeft += scrollSpeed;
+
+                const totalSlidesCount = galleryTrack.children.length;
+                if (totalSlidesCount > 0) {
+                    const halfWidth = galleryTrack.scrollWidth / 2;
+                    if (galleryWrapper.scrollLeft >= halfWidth) {
+                        galleryWrapper.scrollLeft -= halfWidth;
+                    } else if (galleryWrapper.scrollLeft <= 0) {
+                        galleryWrapper.scrollLeft += halfWidth;
+                    }
+                }
+            }
+            requestAnimationFrame(autoScrollGallery);
+        }
+        
+        // Start scroll loop
+        requestAnimationFrame(autoScrollGallery);
+
+        // Pause auto-scroll on hover
+        galleryWrapper.addEventListener('mouseenter', () => {
+            isHovered = true;
+        });
+
+        galleryWrapper.addEventListener('mouseleave', () => {
+            isHovered = false;
+        });
+
+        // Loop wrap logic on manual scroll / trackpad scroll
+        galleryWrapper.addEventListener('scroll', () => {
+            const halfWidth = galleryTrack.scrollWidth / 2;
+            if (galleryWrapper.scrollLeft >= halfWidth) {
+                galleryWrapper.scrollLeft -= halfWidth;
+            } else if (galleryWrapper.scrollLeft <= 0) {
+                galleryWrapper.scrollLeft += halfWidth;
+            }
+        }, { passive: true });
+
+        // Wheel event support for trackpads
+        galleryWrapper.addEventListener('wheel', () => {
+            isUserInteracting = true;
+            clearTimeout(interactionTimeout);
+
+            interactionTimeout = setTimeout(() => {
+                isUserInteracting = false;
+            }, 2500);
+        }, { passive: true });
+
+        // Touch event support for mobile swiping
+        galleryWrapper.addEventListener('touchstart', () => {
+            isUserInteracting = true;
+            clearTimeout(interactionTimeout);
+        }, { passive: true });
+
+        galleryWrapper.addEventListener('touchend', () => {
+            interactionTimeout = setTimeout(() => {
+                isUserInteracting = false;
+            }, 2500);
+        }, { passive: true });
+
+        // Mouse Draggable Slider physics!
+        let isMouseDown = false;
+        let startX;
+        let scrollLeftVal;
+
+        galleryWrapper.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            isUserInteracting = true;
+            clearTimeout(interactionTimeout);
+            startX = e.pageX - galleryWrapper.offsetLeft;
+            scrollLeftVal = galleryWrapper.scrollLeft;
+        });
+
+        galleryWrapper.addEventListener('mouseleave', () => {
+            if (isMouseDown) {
+                isMouseDown = false;
+                interactionTimeout = setTimeout(() => {
+                    isUserInteracting = false;
+                }, 2500);
+            }
+        });
+
+        galleryWrapper.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            interactionTimeout = setTimeout(() => {
+                isUserInteracting = false;
+            }, 2500);
+        });
+
+        galleryWrapper.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            e.preventDefault();
+            const x = e.pageX - galleryWrapper.offsetLeft;
+            const walk = (x - startX) * 1.5; // Drag sensitivity modifier
+            galleryWrapper.scrollLeft = scrollLeftVal - walk;
+        });
+    }
 });
