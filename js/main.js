@@ -181,15 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (headingItems.length > 0 && servicesSection) {
         function handleServicesScroll() {
-            // Only execute parallax scroll links on desktop sizes
-            if (window.innerWidth <= 991) {
-                headingItems.forEach(item => {
-                    item.style.transform = '';
-                    delete item.dataset.naturalTop;
-                });
-                return;
-            }
-
             const viewHeight = window.innerHeight;
             const startTrigger = viewHeight; // Parallax begins when item enters bottom viewport edge
             const endTrigger = 220; // Parallax settles to 0,0 when item rises to 220px from top
@@ -386,6 +377,108 @@ document.addEventListener('DOMContentLoaded', () => {
             const x = e.pageX - galleryWrapper.offsetLeft;
             const walk = (x - startX) * 1.5; // Drag sensitivity modifier
             galleryWrapper.scrollLeft = scrollLeftVal - walk;
+        });
+    }
+
+    /* -------------------------------------------------------------
+       6. Interactive Reviews Slider physics & infinite marquee
+       ------------------------------------------------------------- */
+    const reviewsWrapper = document.getElementById('reviewsMarqueeContainer');
+    const reviewsTrack = document.getElementById('reviewsMarqueeTrack');
+
+    if (reviewsWrapper && reviewsTrack) {
+        let isUserInteractingRev = false;
+        let isHoveredRev = false;
+        let interactionTimeoutRev = null;
+        const scrollSpeedRev = 1.0; // Slightly faster reading scroll
+
+        function autoScrollReviews() {
+            if (!isUserInteractingRev && !isHoveredRev) {
+                reviewsWrapper.scrollLeft += scrollSpeedRev;
+
+                const halfWidth = reviewsTrack.scrollWidth / 2;
+                if (reviewsWrapper.scrollLeft >= halfWidth) {
+                    reviewsWrapper.scrollLeft -= halfWidth;
+                } else if (reviewsWrapper.scrollLeft <= 0) {
+                    reviewsWrapper.scrollLeft += halfWidth;
+                }
+            }
+            requestAnimationFrame(autoScrollReviews);
+        }
+        
+        requestAnimationFrame(autoScrollReviews);
+
+        reviewsWrapper.addEventListener('mouseenter', () => {
+            isHoveredRev = true;
+        });
+
+        reviewsWrapper.addEventListener('mouseleave', () => {
+            isHoveredRev = false;
+        });
+
+        reviewsWrapper.addEventListener('scroll', () => {
+            const halfWidth = reviewsTrack.scrollWidth / 2;
+            if (reviewsWrapper.scrollLeft >= halfWidth) {
+                reviewsWrapper.scrollLeft -= halfWidth;
+            } else if (reviewsWrapper.scrollLeft <= 0) {
+                reviewsWrapper.scrollLeft += halfWidth;
+            }
+        }, { passive: true });
+
+        reviewsWrapper.addEventListener('wheel', () => {
+            isUserInteractingRev = true;
+            clearTimeout(interactionTimeoutRev);
+
+            interactionTimeoutRev = setTimeout(() => {
+                isUserInteractingRev = false;
+            }, 2500);
+        }, { passive: true });
+
+        reviewsWrapper.addEventListener('touchstart', () => {
+            isUserInteractingRev = true;
+            clearTimeout(interactionTimeoutRev);
+        }, { passive: true });
+
+        reviewsWrapper.addEventListener('touchend', () => {
+            interactionTimeoutRev = setTimeout(() => {
+                isUserInteractingRev = false;
+            }, 2500);
+        }, { passive: true });
+
+        let isMouseDownRev = false;
+        let startXRev;
+        let scrollLeftValRev;
+
+        reviewsWrapper.addEventListener('mousedown', (e) => {
+            isMouseDownRev = true;
+            isUserInteractingRev = true;
+            clearTimeout(interactionTimeoutRev);
+            startXRev = e.pageX - reviewsWrapper.offsetLeft;
+            scrollLeftValRev = reviewsWrapper.scrollLeft;
+        });
+
+        reviewsWrapper.addEventListener('mouseleave', () => {
+            if (isMouseDownRev) {
+                isMouseDownRev = false;
+                interactionTimeoutRev = setTimeout(() => {
+                    isUserInteractingRev = false;
+                }, 2500);
+            }
+        });
+
+        reviewsWrapper.addEventListener('mouseup', () => {
+            isMouseDownRev = false;
+            interactionTimeoutRev = setTimeout(() => {
+                isUserInteractingRev = false;
+            }, 2500);
+        });
+
+        reviewsWrapper.addEventListener('mousemove', (e) => {
+            if (!isMouseDownRev) return;
+            e.preventDefault();
+            const x = e.pageX - reviewsWrapper.offsetLeft;
+            const walk = (x - startXRev) * 1.5;
+            reviewsWrapper.scrollLeft = scrollLeftValRev - walk;
         });
     }
 });
