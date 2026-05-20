@@ -370,6 +370,38 @@ body {
     object-fit: contain;
 }
 
+/* Prevent marquee from causing horizontal overflow on small screens */
+.awards-row-container {
+    width: 100%;
+    overflow: hidden;
+}
+
+.marquee-container {
+    max-width: 100%;
+}
+
+.marquee-track {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 50px;
+    will-change: transform;
+}
+
+.marquee-item img {
+    max-width: 120px;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .marquee-track { gap: 28px; }
+    .marquee-item img { max-width: 90px; }
+}
+
+@media (max-width: 420px) {
+    .marquee-item img { max-width: 72px; }
+}
+
 @keyframes marquee-scroll {
     0% {
         transform: translateX(0);
