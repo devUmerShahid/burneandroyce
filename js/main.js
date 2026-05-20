@@ -1,6 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Burne & Royce Digital - Interactive systems initialized.");
 
+    /* -------------------------------------------------------------
+       Top navbar: toggle solid background when hero section is out of view
+       Uses IntersectionObserver to detect hero visibility for accurate toggling
+    ------------------------------------------------------------- */
+    const topNavbar = document.getElementById('topNavbar');
+    const heroSection = document.querySelector('.hero-section');
+
+    if (topNavbar && heroSection && 'IntersectionObserver' in window) {
+        const navObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // hero is visible -> transparent navbar
+                    topNavbar.classList.remove('scrolled');
+                } else {
+                    // hero scrolled out -> solid navbar
+                    topNavbar.classList.add('scrolled');
+                }
+            });
+        }, { root: null, threshold: 0.05 });
+
+        navObserver.observe(heroSection);
+    } else if (topNavbar && heroSection) {
+        // Fallback: toggle on scroll position
+        function fallbackCheck() {
+            const heroBottom = heroSection.getBoundingClientRect().bottom;
+            if (heroBottom <= 10) topNavbar.classList.add('scrolled');
+            else topNavbar.classList.remove('scrolled');
+        }
+        window.addEventListener('scroll', fallbackCheck, { passive: true });
+        fallbackCheck();
+    }
+
     // Micro-interactions for Hero buttons (if uncommented)
     const chatBtn = document.getElementById('chatButton');
     if (chatBtn) {
